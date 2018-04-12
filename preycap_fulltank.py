@@ -17,21 +17,27 @@ pandac.PandaModules.loadPrcFileData("", """
             load-display pandagl
             win-origin 0 0
             undecorated 1
-            win-size 1920 1080
+            win-size 2560 1600
             sync-video 1
             """)
 
 
 class MyApp(ShowBase):
     def __init__(self):
-        simulation = True
+        simulation = False
         if not simulation:
-            para_cont_window = np.load('para_continuity_window.npy')
+            homedir = '/Users/nightcrawler2/'
+            para_cont_window = np.load(homedir + 'para_continuity_window.npy')
             para_cont_window = int(para_cont_window)
             print para_cont_window
-            para_positions = np.load('3D_paracoords.npy')[:, para_cont_window:]
-            fish_position = np.load('ufish_origin.npy')
-            fish_orientation = np.load('ufish.npy')
+            para_positions = np.load(
+                homedir + '3D_paracoords.npy')[:, para_cont_window:]
+            fish_position = np.load(homedir + 'ufish_origin.npy')
+            fish_orientation = np.load(homedir + 'ufish.npy')
+            try:
+                self.strikelist = np.load(homedir + 'strike.npy')
+            except IOError:
+                self.strikelist = np.zeros(fish_position.shape[0])
         else:
             para_positions = np.load('para_simulation.npy')
             fish_position = np.load('origin_model.npy')
@@ -66,6 +72,7 @@ class MyApp(ShowBase):
         print self.numframes
         ShowBase.__init__(self)
         self.accept("escape", self.exitmodel)
+#        self.accept("escape", sys.exit)
         props = WindowProperties()
         props.setCursorHidden(False)
         props.setMouseMode(WindowProperties.M_absolute)
@@ -188,16 +195,24 @@ class MyApp(ShowBase):
 
     # Define a procedure to move the camera.
     def exitmodel(self):
-        self.destroy()
+#        self.closeWindow(self.win)
+#        self.taskMgr.add(sys.exit, "sys.exit")
+#        self.userExit()
+#        self.destroy()
         sys.exit()
+
+#        sys.exit()
+#        self.userExit()
+#        self.destroy()
+#        sys.exit()
         
     def movepara(self, task):
-        strike = False
         floor_slowdown = 2
-        curr_frame = np.floor(self.iteration / floor_slowdown)
-        if curr_frame == len(self.fish_position):
+        curr_frame = np.floor(self.iteration / floor_slowdown).astype(np.int)
+        print curr_frame
+        if curr_frame == len(self.fish_position) - 1:
             self.iteration = 0
-            curr_frame = np.floor(self.iteration / floor_slowdown)
+            curr_frame = 0
         para_positions = self.para_positions[:, curr_frame]
         fish_position = self.fish_position[curr_frame]
         fish_orientation = self.fish_orientation[curr_frame]
@@ -211,7 +226,6 @@ class MyApp(ShowBase):
                 self.spheres[i/3].setPos(x, y, z)
             else:
                 self.spheres[i/3].hide()
-                strike = True
         x_fish = fish_position[0]
         y_fish = fish_position[1]
         z_fish = fish_position[2]
@@ -226,8 +240,8 @@ class MyApp(ShowBase):
 
         for i in range(int(self.numpara/3)):
             self.spheres[i].lookAt(self.sphere_fish)
-        self.sphere_fish.setPos(x_fish, y_fish, z_fish)
-        if strike:
+        self.sphere_fish.setPos(x_fish, y_fish, z_fish)        
+        if self.strikelist[curr_frame]:
             text = pandac.PandaModules.TextNode('node name')
             text.setText('STRIKE')
             textNodePath = self.sphere_fish.attachNewNode(text)
