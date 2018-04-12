@@ -14,10 +14,10 @@ pandac.PandaModules.loadPrcFileData("", """
             load-display pandagl
             win-origin 0 0
             undecorated 1
-            win-size 1920 1080 
+            win-size 1920 1080
             sync-video 1
             """)
-
+# test
 
 class MyApp(ShowBase):
     def __init__(self):
