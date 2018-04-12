@@ -1,4 +1,5 @@
 import sys
+from pandac.PandaModules import WindowProperties
 import pandac.PandaModules
 # from panda3d.core import Shader
 from direct.showbase.ShowBase import ShowBase
@@ -12,7 +13,7 @@ pandac.PandaModules.loadPrcFileData("", """
             load-display pandagl
             win-origin 0 0
             undecorated 1
-            win-size 1280 800
+            win-size 1920 1080
             sync-video 1
             """)
 
@@ -52,8 +53,11 @@ class MyApp(ShowBase):
         self.fish_orientation = fish_orientation_filt
 
         ShowBase.__init__(self)
-        self.accept("escape", sys.exit)
-        # self.disableMouse()
+        self.accept("escape", self.exitmodel)
+#        props = WindowProperties()
+#        props.setCursorHidden(False)
+#        props.setMouseMode(WindowProperties.M_absolute)
+#        self.win.requestProperties(props)
         self.lens1 = pandac.PandaModules.PerspectiveLens()
         self.lens1.setFov(120, 120)
         self.lens1.setNearFar(0.1, 10000)
@@ -87,9 +91,9 @@ class MyApp(ShowBase):
         self.spheres = dict({})
 
         for i in range(int(self.numpara/3)):
-            self.spheres[i] = self.loader.loadModel("sphere-highpoly")
+            self.spheres[i] = self.loader.loadModel("sphere")
             self.spheres[i].reparentTo(self.render)
-            self.spheres[i].setScale(1, 1, 1)
+            self.spheres[i].setScale(5, 5, 5)
             if not simulation:
                 text = pandac.PandaModules.TextNode('node name')
                 text.setText(' ' + str(i))
@@ -99,14 +103,14 @@ class MyApp(ShowBase):
                 textNodePath.setPos(-10, 0, 0)
                 textNodePath.setHpr(180, 0, 0)
 
-        self.sphere_fish = self.loader.loadModel("sphere-highpoly")
+        self.sphere_fish = self.loader.loadModel("sphere")
         self.sphere_fish.reparentTo(self.render)
-        self.sphere_fish.setScale(2, 2, 2)
+        self.sphere_fish.setScale(5, 5, 5)
         self.sphere_fish.setColor(1, 0, 1)
 
-        self.sphere_fish2 = self.loader.loadModel("sphere-highpoly")
+        self.sphere_fish2 = self.loader.loadModel("sphere")
         self.sphere_fish2.reparentTo(self.render)
-        self.sphere_fish2.setScale(0.01, 0.01, 0.01)
+        self.sphere_fish2.setScale(0.02, 0.02, 0.02)
         self.sphere_fish2.setColor(0.5, 0.1, 0.6)
 
         self.iteration = 0
@@ -114,12 +118,22 @@ class MyApp(ShowBase):
         self.taskMgr.add(self.movepara, "movepara")
 
     # Define a procedure to move the camera.
+    def exitmodel(self):
+        print len(self.para_positions)
+        print len(self.fish_position)
+        print len(self.fish_orientation)
+        self.destroy()
+        sys.exit()
+    
     def movepara(self, task):
-        curr_frame = np.floor(self.iteration / 5)
+        floor_slowdown = 5
+        curr_frame = np.floor(self.iteration / floor_slowdown)
         para_positions = self.para_positions[:, curr_frame]
         fish_position = self.fish_position[curr_frame]
         fish_orientation = self.fish_orientation[curr_frame]
-
+        if curr_frame == len(self.fish_position) - 1:
+            self.iteration = 0
+            curr_frame = np.floor(self.iteration / floor_slowdown)
         for i in np.arange(0, self.numpara, 3):
             x = para_positions[i]
             y = para_positions[i+1]
@@ -148,7 +162,7 @@ class MyApp(ShowBase):
         # this does same thing as base
         # self.screenshot(defaultFilename=0, namePrefix= "%05d.png" % (task.frame))
 
-        if self.iteration == self.numframes:
+        if self.iteration == self.numframes * floor_slowdown:
             self.iteration = 0
         else:
             self.iteration += 1

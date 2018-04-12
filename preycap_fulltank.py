@@ -193,10 +193,11 @@ class MyApp(ShowBase):
         
     def movepara(self, task):
         strike = False
-        curr_frame = np.floor(self.iteration / 2).astype(np.int)
-#        curr_frame = self.iteration
+        floor_slowdown = 2
+        curr_frame = np.floor(self.iteration / floor_slowdown)
         if curr_frame == len(self.fish_position):
-            self.exitmodel()
+            self.iteration = 0
+            curr_frame = np.floor(self.iteration / floor_slowdown)
         para_positions = self.para_positions[:, curr_frame]
         fish_position = self.fish_position[curr_frame]
         fish_orientation = self.fish_orientation[curr_frame]
@@ -240,7 +241,7 @@ class MyApp(ShowBase):
                              y_fish + correction_y,
                              z_fish + correction_z)
         self.fishcone.lookAt(self.fish_uvec)
-        if self.iteration == self.numframes:
+        if self.iteration == self.numframes * floor_slowdown:
             self.iteration = 0
         else:
             self.iteration += 1
