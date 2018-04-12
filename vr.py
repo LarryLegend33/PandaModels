@@ -13,7 +13,7 @@ pandac.PandaModules.loadPrcFileData("", """
             load-display pandagl
             win-origin 0 0
             undecorated 1
-            win-size 2560 1600
+            win-size 1920 1080
             sync-video 1
             """)
 
@@ -23,7 +23,7 @@ class MyApp(ShowBase):
 
         simulation = True
         if not simulation:
-            homedir = '/Users/nightcrawler2/'
+            homedir = '/Users/nightcrawler/'
             para_cont_window = np.load(homedir + 'para_continuity_window.npy')
             para_cont_window = int(para_cont_window)
             print para_cont_window
