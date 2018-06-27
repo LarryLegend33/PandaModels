@@ -9,23 +9,31 @@ from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter
 
 pandac.PandaModules.loadPrcFileData("", """
-            fullscreen 1
+            fullscreen 0
             load-display pandagl
             win-origin 0 0
-            undecorated 1
-            win-size 2560 1600
+            undecorated 0
+            win-size 640 400
             sync-video 1
             """)
 
+#  win-size 2560 1600
 
 class MyApp(ShowBase):
     def __init__(self):
-
-        simulation = True
+        homedir = '/Users/nightcrawler2/PreycapMaster/'
+        sim_text = raw_input('Simulation Type: ')
+        if sim_text == 's':
+            simulation = True
+        if sim_text == 'r' or sim_text == 't':
+            simulation = False
         if not simulation:
-            homedir = '/Users/nightcrawler2/'
-            para_cont_window = np.load(homedir + 'para_continuity_window.npy')
-            para_cont_window = int(para_cont_window)
+            if sim_text == 't':
+                para_cont_window = np.load(
+                    homedir + 'para_continuity_window.npy')
+                para_cont_window = int(para_cont_window)
+            else:
+                para_cont_window = 0
             print para_cont_window
             para_positions = np.load(
                 homedir + '3D_paracoords.npy')[:, para_cont_window:]
@@ -33,9 +41,18 @@ class MyApp(ShowBase):
             fish_orientation = np.load(homedir + 'ufish.npy')
 
         else:
-            para_positions = np.load('para_simulation.npy')
-            fish_position = np.load('origin_model.npy')
-            fish_orientation = np.load('uf_model.npy')
+            para_positions = np.load(
+                homedir + 'para_simulation.npy')
+            print("Para Positions")
+            print(para_positions.shape[1])
+            fish_position = np.load(
+                homedir + 'origin_model.npy')
+            print("Fish_Position")
+            print(fish_position.shape[0])
+            fish_orientation = np.load(
+                homedir + 'uf_model.npy')
+            print("Fish_Orientation")
+            print(fish_orientation.shape[0])
 
         self.numpara = para_positions.shape[0]
         self.numframes = para_positions.shape[1]
@@ -68,7 +85,7 @@ class MyApp(ShowBase):
         self.cam.node().setLens(self.lens1)
         self.cam.setPos(0, 0, 0)
         self.setBackgroundColor(0, 0, 0, 1)
-
+#        self.setBackgroundColor(.3, .6, .9)
         # Some Lines That Define Tank Boundaries
         self.d2 = pandac.PandaModules.LineSegs()
         self.d2.setColor(1, 1, 1, 1)
@@ -97,11 +114,12 @@ class MyApp(ShowBase):
             self.spheres[i] = self.loader.loadModel("sphere")
             self.spheres[i].reparentTo(self.render)
             self.spheres[i].setScale(5, 5, 5)
-            if not simulation:
+#            self.spheres[i].setColor(.25, .25, .25)
+            if sim_text == 't':
                 text = pandac.PandaModules.TextNode('node name')
                 text.setText(' ' + str(i))
                 textNodePath = self.spheres[i].attachNewNode(text)
-                textNodePath.setScale(10)
+                textNodePath.setScale(5)
                 textNodePath.setTwoSided(True)
                 textNodePath.setPos(-10, 0, 0)
                 textNodePath.setHpr(180, 0, 0)

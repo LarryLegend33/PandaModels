@@ -8,28 +8,40 @@ from direct.task import Task
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 
-
-
-
-
 pandac.PandaModules.loadPrcFileData("", """
-            fullscreen 1
+            fullscreen 0
             load-display pandagl
             win-origin 0 0
-            undecorated 1
-            win-size 2560 1600
+            undecorated 0
+            win-size 640 400
             sync-video 1
             """)
+
+# pandac.PandaModules.loadPrcFileData("", """
+#             fullscreen 1
+#             load-display pandagl
+#             win-origin 0 0
+#             undecorated 1
+#             win-size 2560 1600
+#             sync-video 1
+#             """)
 
 
 class MyApp(ShowBase):
     def __init__(self):
-        simulation = False
+        homedir = '/Users/nightcrawler2/PreycapMaster/'
+        sim_text = raw_input('Simulation Type: ')
+        if sim_text == 's':
+            simulation = True
+        if sim_text == 'r' or sim_text == 't':
+            simulation = False
         if not simulation:
-            homedir = '/Users/nightcrawler2/'
-            para_cont_window = np.load(homedir + 'para_continuity_window.npy')
-            para_cont_window = int(para_cont_window)
-            print para_cont_window
+            if sim_text == 't':
+                para_cont_window = np.load(
+                    homedir + 'para_continuity_window.npy')
+                para_cont_window = int(para_cont_window)
+            else:
+                para_cont_window = 0
             para_positions = np.load(
                 homedir + '3D_paracoords.npy')[:, para_cont_window:]
             fish_position = np.load(homedir + 'ufish_origin.npy')
@@ -38,14 +50,30 @@ class MyApp(ShowBase):
                 self.strikelist = np.load(homedir + 'strike.npy')
             except IOError:
                 self.strikelist = np.zeros(fish_position.shape[0])
+        elif simulation:
+            para_positions = np.load(
+                homedir + 'para_simulation.npy')
+            fish_position = np.load(
+                homedir + 'origin_model.npy')
+            fish_orientation = np.load(
+                homedir + 'uf_model.npy')
+            if para_positions.shape[1] != fish_position.shape[0]:
+                end_fp = [fish_position[-1] for i in range(
+                    para_positions.shape[1]-fish_position.shape[0])]
+                end_fo = [fish_orientation[-1] for i in range(
+                    para_positions.shape[1]-fish_orientation.shape[0])]
+                fish_position = np.concatenate((fish_position, end_fp))
+                fish_orientation = np.concatenate((fish_orientation, end_fo))
+            try:
+                self.strikelist = np.load(
+                    homedir + 'strike.npy')
+                print self.strikelist.shape
+            except IOError:
+                self.strikelist = np.zeros(fish_position.shape[0])
+                print self.strikelist.shape
+
         else:
-            para_positions = np.load('para_simulation.npy')
-            fish_position = np.load('origin_model.npy')
-            fish_orientation = np.load('uf_model.npy')
-            end_fp = [fish_position[-1] for i in range(60)]
-            end_fo = [fish_orientation[-1] for i in range(60)]
-            fish_position = np.concatenate((fish_position, end_fp))
-            fish_orientation = np.concatenate((fish_orientation, end_fo))
+            self.exitmodel()
         self.numpara = para_positions.shape[0]
         self.numframes = para_positions.shape[1]
         self.para_positions = para_positions
