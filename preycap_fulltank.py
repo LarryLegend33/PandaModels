@@ -8,12 +8,21 @@ from direct.task import Task
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 
+# pandac.PandaModules.loadPrcFileData("", """
+#             fullscreen 0
+#             load-display pandagl
+#             win-origin 0 0
+#             undecorated 0
+#             win-size 640 400
+#             sync-video 1
+#             """)
+
 pandac.PandaModules.loadPrcFileData("", """
             fullscreen 0
             load-display pandagl
             win-origin 0 0
             undecorated 0
-            win-size 640 400
+            win-size 1280 800
             sync-video 1
             """)
 
@@ -47,7 +56,7 @@ class MyApp(ShowBase):
             fish_position = np.load(homedir + 'ufish_origin.npy')
             fish_orientation = np.load(homedir + 'ufish.npy')
             try:
-                self.strikelist = np.load(homedir + 'strike.npy')
+                self.strikelist = np.load(homedir + 'strikelist.npy')
             except IOError:
                 self.strikelist = np.zeros(fish_position.shape[0])
         elif simulation:
@@ -66,7 +75,7 @@ class MyApp(ShowBase):
                 fish_orientation = np.concatenate((fish_orientation, end_fo))
             try:
                 self.strikelist = np.load(
-                    homedir + 'strike.npy')
+                    homedir + 'strikelist.npy')
                 print self.strikelist.shape
             except IOError:
                 self.strikelist = np.zeros(fish_position.shape[0])
@@ -219,6 +228,7 @@ class MyApp(ShowBase):
 
         # Add the spinCameraTask procedure to the task manager.
         self.iteration = 0
+        self.complete = False
         self.taskMgr.add(self.movepara, "movepara")
 
     # Define a procedure to move the camera.
@@ -237,10 +247,13 @@ class MyApp(ShowBase):
     def movepara(self, task):
         floor_slowdown = 2
         curr_frame = np.floor(self.iteration / floor_slowdown).astype(np.int)
-        print curr_frame
-        if curr_frame == len(self.fish_position) - 1:
-            self.iteration = 0
-            curr_frame = 0
+        if curr_frame % 20 == 0:
+            print curr_frame
+        if curr_frame >= len(self.fish_position):
+            curr_frame = len(self.fish_position) - 1
+        if self.complete:
+            curr_frame = len(self.fish_position) - 1
+
         para_positions = self.para_positions[:, curr_frame]
         fish_position = self.fish_position[curr_frame]
         fish_orientation = self.fish_orientation[curr_frame]
@@ -269,14 +282,17 @@ class MyApp(ShowBase):
         for i in range(int(self.numpara/3)):
             self.spheres[i].lookAt(self.sphere_fish)
         self.sphere_fish.setPos(x_fish, y_fish, z_fish)        
-        if self.strikelist[curr_frame]:
+        if self.strikelist[curr_frame] and not self.complete:
+            print("STRIKE!!!!!!")
             text = pandac.PandaModules.TextNode('node name')
-            text.setText('STRIKE')
-            textNodePath = self.sphere_fish.attachNewNode(text)
-            textNodePath.setScale(3)
+            text.setText('STRIKE!!')
+            textNodePath = self.render.attachNewNode(text)
+            textNodePath.setScale(200)
             textNodePath.setTwoSided(True)
-            textNodePath.setPos(-15, 0, 0)
-            textNodePath.setHpr(120, 0, 0)
+            textNodePath.setPos(1200, -900, 900)
+            textNodePath.setHpr(180, 0, 0)
+            textNodePath.setColor(255, 0, 0)
+            self.complete = True
 
         self.fish_uvec.setPos(x_fish - ux, y_fish - uy, z_fish - uz)
         self.fishcone.setPos(x_fish + correction_x,
@@ -284,7 +300,8 @@ class MyApp(ShowBase):
                              z_fish + correction_z)
         self.fishcone.lookAt(self.fish_uvec)
         if self.iteration == self.numframes * floor_slowdown:
-            self.iteration = 0
+#            self.iteration = 0
+            pass
         else:
             self.iteration += 1
         return Task.cont

@@ -39,6 +39,7 @@ class MyApp(ShowBase):
                 homedir + '3D_paracoords.npy')[:, para_cont_window:]
             fish_position = np.load(homedir + 'ufish_origin.npy')
             fish_orientation = np.load(homedir + 'ufish.npy')
+            self.strikelist = np.zeros(fish_position.shape[0])
 
         else:
             para_positions = np.load(
@@ -53,7 +54,10 @@ class MyApp(ShowBase):
                 homedir + 'uf_model.npy')
             print("Fish_Orientation")
             print(fish_orientation.shape[0])
-
+            try:
+                self.strikelist = np.load(homedir + 'strikelist.npy')
+            except IOError:
+                self.strikelist = np.zeros(fish_position.shape[0])
         self.numpara = para_positions.shape[0]
         self.numframes = para_positions.shape[1]
         self.para_positions = para_positions
@@ -79,23 +83,52 @@ class MyApp(ShowBase):
 #        props.setMouseMode(WindowProperties.M_absolute)
 #        self.win.requestProperties(props)
         self.lens1 = pandac.PandaModules.PerspectiveLens()
-        self.lens1.setFov(120, 120)
+#        self.lens1.setFov(120, 120)
+        self.lens1.setFov(90, 90)
         self.lens1.setNearFar(0.1, 10000)
         self.lens1.setAspectRatio(1280/800.)
         self.cam.node().setLens(self.lens1)
         self.cam.setPos(0, 0, 0)
         self.setBackgroundColor(0, 0, 0, 1)
 #        self.setBackgroundColor(.3, .6, .9)
-        # Some Lines That Define Tank Boundaries
+        # Original Tank Boundary Lines
+        # self.d2 = pandac.PandaModules.LineSegs()
+        # self.d2.setColor(1, 1, 1, 1)
+        # self.d2.setThickness(150)
+        # self.d2.moveTo(0, 0, 0)
+        # self.d2.drawTo(1888, 0, 0)
+        # self.d2.moveTo(0, 0, 0)
+        # self.d2.drawTo(0, 0, 1888)
+        # self.d2.moveTo(0, 0, 0)
+        # self.d2.drawTo(0, 1888, 0)
         self.d2 = pandac.PandaModules.LineSegs()
-        self.d2.setColor(1, 1, 1, 1)
-        self.d2.setThickness(150)
+        self.d2.setColor(1, 1, 1, .5)
+        self.d2.setThickness(1)
         self.d2.moveTo(0, 0, 0)
         self.d2.drawTo(1888, 0, 0)
         self.d2.moveTo(0, 0, 0)
         self.d2.drawTo(0, 0, 1888)
         self.d2.moveTo(0, 0, 0)
         self.d2.drawTo(0, 1888, 0)
+        self.d2.moveTo(1888, 1888, 0)
+        self.d2.drawTo(1888, 1888, 1888)
+        self.d2.moveTo(0, 1888, 1888)
+        self.d2.drawTo(1888, 1888, 1888)
+        self.d2.moveTo(1888, 0, 1888)
+        self.d2.drawTo(1888, 1888, 1888)
+        self.d2.moveTo(1888, 0, 0)
+        self.d2.drawTo(1888, 1888, 0)
+        self.d2.moveTo(1888, 0, 0)
+        self.d2.drawTo(1888, 0, 1888)
+        self.d2.moveTo(0, 1888, 0)
+        self.d2.drawTo(1888, 1888, 0)
+        self.d2.moveTo(0, 1888, 0)
+        self.d2.drawTo(0, 1888, 1888)
+        self.d2.moveTo(0, 0, 1888)
+        self.d2.drawTo(0, 1888, 1888)
+        self.d2.moveTo(0, 0, 1888)
+        self.d2.drawTo(1888, 0, 1888)
+
 
         self.fish_vect = pandac.PandaModules.LineSegs()
         self.fish_vect.setColor(0, 0, 1, 1)
@@ -113,8 +146,9 @@ class MyApp(ShowBase):
         for i in range(int(self.numpara/3)):
             self.spheres[i] = self.loader.loadModel("sphere")
             self.spheres[i].reparentTo(self.render)
-            self.spheres[i].setScale(5, 5, 5)
-#            self.spheres[i].setColor(.25, .25, .25)
+#            self.spheres[i].setScale(5, 5, 5)
+            self.spheres[i].setColor(.75, .75, .75)
+            self.spheres[i].setScale(4, 4, 4)
             if sim_text == 't':
                 text = pandac.PandaModules.TextNode('node name')
                 text.setText(' ' + str(i))
@@ -131,10 +165,12 @@ class MyApp(ShowBase):
 
         self.sphere_fish2 = self.loader.loadModel("sphere")
         self.sphere_fish2.reparentTo(self.render)
-        self.sphere_fish2.setScale(0.02, 0.02, 0.02)
+#        self.sphere_fish2.setScale(0.02, 0.02, 0.02)
+        self.sphere_fish2.setScale(0.015, 0.015, 0.015)
         self.sphere_fish2.setColor(0.5, 0.1, 0.6)
 
         self.iteration = 0
+        self.complete = False
         # Add the spinCameraTask procedure to the task manager.
         self.taskMgr.add(self.movepara, "movepara")
 
@@ -147,14 +183,19 @@ class MyApp(ShowBase):
         sys.exit()
     
     def movepara(self, task):
-        floor_slowdown = 5
+        floor_slowdown = 2
         curr_frame = np.floor(self.iteration / floor_slowdown).astype(np.int)
+        if curr_frame >= len(self.fish_position):
+            curr_frame = len(self.fish_position) - 1
+        if self.complete:
+            curr_frame = len(self.fish_position) - 1
+
         para_positions = self.para_positions[:, curr_frame]
         fish_position = self.fish_position[curr_frame]
         fish_orientation = self.fish_orientation[curr_frame]
-        if curr_frame == len(self.fish_position) - 1:
-            self.iteration = 0
-            curr_frame = 0
+            
+        if curr_frame % 20 == 0:
+            print curr_frame            
         for i in np.arange(0, self.numpara, 3):
             x = para_positions[i]
             y = para_positions[i+1]
@@ -178,13 +219,27 @@ class MyApp(ShowBase):
 
         self.sphere_fish.setPos(x_fish, y_fish, z_fish)
         self.sphere_fish2.setPos(x_fish+dx, y_fish+dy, z_fish+dz)
+        if self.strikelist[curr_frame] and not self.complete:
+            print('STRIKE!!!!')
+            text = pandac.PandaModules.TextNode('node name')
+            text.setText('STRIKE!!')
+            textNodePath = self.render.attachNewNode(text)
+            textNodePath.lookAt(self.sphere_fish2)
+            textNodePath.setScale(.1)
+            textNodePath.setTwoSided(True)
+            textNodePath.setPos(x_fish + dx + .1, y_fish + dy, z_fish + dz)
+            textNodePath.setHpr(45, 0, 0)
+            textNodePath.setColor(255,0,0)
+            # comment out complete = True to have this run forever
+            self.complete = True
         self.cam.setPos(x_fish, y_fish, z_fish)
         self.cam.lookAt(self.sphere_fish2)
         # this does same thing as base
         # self.screenshot(defaultFilename=0, namePrefix= "%05d.png" % (task.frame))
 
         if self.iteration == self.numframes * floor_slowdown:
-            self.iteration = 0
+#            self.iteration = 0
+            pass
         else:
             self.iteration += 1
 
