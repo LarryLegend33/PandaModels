@@ -40,7 +40,7 @@ class MyApp(ShowBase):
     def __init__(self):
         homedir = '/Users/nightcrawler2/PreycapMaster/'
         sim_text = raw_input('Simulation Type: ')
-        if sim_text == 's':
+        if sim_text[0] == 's':
             simulation = True
         if sim_text == 'r' or sim_text == 't':
             simulation = False
@@ -61,11 +61,11 @@ class MyApp(ShowBase):
                 self.strikelist = np.zeros(fish_position.shape[0])
         elif simulation:
             para_positions = np.load(
-                homedir + 'para_simulation.npy')
+                homedir + 'para_simulation' + sim_text[1] + '.npy')
             fish_position = np.load(
-                homedir + 'origin_model.npy')
+                homedir + 'origin_model' + sim_text[1] + '.npy')
             fish_orientation = np.load(
-                homedir + 'uf_model.npy')
+                homedir + 'uf_model' + sim_text[1] + '.npy')
             if para_positions.shape[1] != fish_position.shape[0]:
                 end_fp = [fish_position[-1] for i in range(
                     para_positions.shape[1]-fish_position.shape[0])]
@@ -75,7 +75,7 @@ class MyApp(ShowBase):
                 fish_orientation = np.concatenate((fish_orientation, end_fo))
             try:
                 self.strikelist = np.load(
-                    homedir + 'strikelist.npy')
+                    homedir + 'strikelist' + sim_text[1] + '.npy')
                 print self.strikelist.shape
             except IOError:
                 self.strikelist = np.zeros(fish_position.shape[0])

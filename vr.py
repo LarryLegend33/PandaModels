@@ -23,7 +23,7 @@ class MyApp(ShowBase):
     def __init__(self):
         homedir = '/Users/nightcrawler2/PreycapMaster/'
         sim_text = raw_input('Simulation Type: ')
-        if sim_text == 's':
+        if sim_text[0] == 's':
             simulation = True
         if sim_text == 'r' or sim_text == 't':
             simulation = False
@@ -43,19 +43,19 @@ class MyApp(ShowBase):
 
         else:
             para_positions = np.load(
-                homedir + 'para_simulation.npy')
+                homedir + 'para_simulation' + sim_text[1] + '.npy')
             print("Para Positions")
             print(para_positions.shape[1])
             fish_position = np.load(
-                homedir + 'origin_model.npy')
+                homedir + 'origin_model' + sim_text[1] + '.npy')
             print("Fish_Position")
             print(fish_position.shape[0])
             fish_orientation = np.load(
-                homedir + 'uf_model.npy')
+                homedir + 'uf_model' + sim_text[1] + '.npy')
             print("Fish_Orientation")
             print(fish_orientation.shape[0])
             try:
-                self.strikelist = np.load(homedir + 'strikelist.npy')
+                self.strikelist = np.load(homedir + 'strikelist' + sim_text[1]+ '.npy')
             except IOError:
                 self.strikelist = np.zeros(fish_position.shape[0])
         self.numpara = para_positions.shape[0]
@@ -183,7 +183,7 @@ class MyApp(ShowBase):
         sys.exit()
     
     def movepara(self, task):
-        floor_slowdown = 2
+        floor_slowdown = 4
         curr_frame = np.floor(self.iteration / floor_slowdown).astype(np.int)
         if curr_frame >= len(self.fish_position):
             curr_frame = len(self.fish_position) - 1
